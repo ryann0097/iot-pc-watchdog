@@ -1,5 +1,4 @@
 # Especificações de Projeto 
--- 
 
 ## Objetivo do projeto:
 <p>"PC Watchdog" tem como objetivo, semelhantemente a um cão de guarda, alertar sobre potenciais riscos ao seu computador, usando scripts em Python para isso e tendo como auxiliar um componente de IoT muito popular, o ESP32. O projeto consegue rastreiar a temperatura, o uso de CPU e o uso de memória RAM, fornecendo dados em tempo real para identificar e previnir problemas relacionados ao desempenho e à saúde do computador.</p>
