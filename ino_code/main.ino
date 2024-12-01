@@ -211,7 +211,16 @@ void publishLog(String dados) {
  * ============================================
  */
 
-
+void salvarNoSPIFFS(String dados) {
+  File file = SPIFFS.open("/logs.txt", FILE_APPEND);
+  if (file) {
+    file.println(dados);
+    file.close();
+    Serial.println("Log salvo no SPIFFS");
+  } else {
+    Serial.println("Erro ao salvar log no SPIFFS");
+  }
+}
 
 /** ==================[ Receber Dados do PC ]=============
  * Funções para receber dados via serial do PC e processá-los
@@ -284,10 +293,14 @@ void loop() {
     client.loop();
 
     // Se tiver internet, publicar dados no MQTT.
-    publishCpuTemp(temperatura);
-    publishCpuUsage(cpuUsage);
-    publishMemUsage(memUsage);
-    publishLog(dados);
+    if(io.connect){
+      publishCpuTemp(temperatura);
+      publishCpuUsage(cpuUsage);
+      publishMemUsage(memUsage);
+      publishLog(dados);
+    }else{
+      SalvarNoSPIFFS(dados);
+    }
 
     // Aqui é o sistema de monitoramento local:
     atualizarHistorico(historicoCpu, cpuUsage);
