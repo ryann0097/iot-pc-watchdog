@@ -2,6 +2,79 @@
 #include <PubSubClient.h>
 #include <SPIFFS.h>
 
+
+/** ========[ Funcões e Setup de Componentes ]==========
+ * Definindo o setup do buzzer (alarme único baseado na questão do nível de risco)
+ * Definição do HC-SR04 para verificar proximidade de usuário
+ * =====================================================
+ */
+
+#define BUZZER
+#define HCSR04_TRIG
+#define HCSR04_ECHO
+#define VELOC_SOM 0.034
+#define INTERVALO 120000
+
+float verificarDistanciaUsuario(){
+  digitalWrite(HCSR04_TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(HCSR04_TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(HCSR04_TRIG, LOW);
+
+  long = duracaoPulso = pulseIn(HCSR04_ECHO, HIGH);
+  float distanciaCm = duracaoPulso * VELOC_SOM / 2;
+
+  return distanciaCm;
+}
+
+/** ===============[ Variáveis de Ciclo ]===============
+ *  Variáveis para avaliação da situação por tempo
+ * =====================================================
+ */
+
+#define CICLOS 3
+int historicoCpu[CICLOS] = {0};
+int historicoMemoria[CICLOS] = {0};
+int historicoTemperatura[CICLOS] = {0};
+
+int indiceHistorico = 0;
+
+/** ===============[ Funções de Ciclo ]===============
+ *  Variáveis para avaliação da situação por tempo
+ * =====================================================
+ */
+
+void atualizarHistorico(int* historico, int valor) {
+  historico[indiceHistorico] = valor;
+  indiceHistorico = (indiceHistorico + 1) % CICLOS;  // Atualiza o índice de forma circular
+}
+
+int avaliarRisco() {
+  bool cpuAlta = mediaElevada(historicoCPU, 70);
+  bool memoriaAlta = mediaElevada(historicoMemoria, 70);
+  bool temperaturaAlta = mediaElevada(historicoTemperatura, 70);
+
+  if (temperaturaAlta && !cpuAlta && !memoriaAlta) {
+    return 4; // Anomalia térmica
+  } else if (cpuAlta && memoriaAlta && temperaturaAlta) {
+    return 3; // Sobrecarga constante
+  } else if (cpuAlta || memoriaAlta || temperaturaAlta) {
+    return 2; // Alerta: Pico detectado
+  } else {
+    return 1; // Estado: Normal
+  }
+}
+
+bool mediaElevada(int* historico, int limite) {
+  int soma = 0;
+  for (int i = 0; i < CICLOS; i++) {
+    soma += historico[i];
+  }
+  return (soma / CICLOS) >= limite;
+}
+
+
 /** ==================[ Adafruit IO ]====================
  * Configurações para o Adafruit IO
  * ============================================
@@ -178,28 +251,73 @@ void setup() {
     return;
   }
   Serial.println("SPIFFS iniciado");
+
+  // Setup dos componentes
+  pinMode(BUZZER, OUTPUT);
+  pinMode(HCSR04_TRIG, OUTPUT);
+  pinMode(HCSR04_ECHO, INPUT);
 }
+
+unsigned long lastMillis = 0;  // Variável para armazenar o tempo do último ciclo
 
 void loop() {
-  // Receber dados do script do PC.
-  String dadosScript = obterDados();
-  if (!dadosScript.empty()) {
-    processarDados(dadosScript);
+  unsigned long currentMillis = millis();  // Tempo atual
+  int frequenciaAlarme = 0;
+
+  // Preferi trocar delay por isso aqui, para não interromper o buzzer
+  if (currentMillis - lastMillis >= INTERVALO) {
+  
+    lastMillis = currentMillis;
+
+    // Receber dados do script do PC.
+    String dadosScript = obterDados();
+    if (!dadosScript.empty()) {
+      processarDados(dadosScript);
+    }
+
+    String dados = "[Cpu Usage] " + cpuUsage + " [Cpu Temp] " + temperatura + " [Mem Usage] " + memUsage;
+
+    // Verificar conexão com o MQTT Broker
+    if (!client.connected()) {
+      reconnect();
+    }
+    client.loop();
+
+    // Se tiver internet, publicar dados no MQTT.
+    publishCpuTemp(temperatura);
+    publishCpuUsage(cpuUsage);
+    publishMemUsage(memUsage);
+    publishLog(dados);
+
+    // Aqui é o sistema de monitoramento local:
+    atualizarHistorico(historicoCpu, cpuUsage);
+    atualizarHistorico(historicoTemperatura, temperatura);
+    atualizarHistorico(historicoMemoria, memUsage);
+
+    int estadoAtual = avaliarRisco();
+    float distanciaUsuario = verificarDistanciaUsuario();
+
+    switch (estadoAtual) {
+      case 1:
+        frequenciaAlarme = 0;
+        break;
+      case 2:
+        frequenciaAlarme = 1000;
+        break;
+      case 3:
+        frequenciaAlarme = 2000;
+        break;
+      case 4:
+        frequenciaAlarme = 4000;
+        break;
+    }
   }
 
-  String dados = "[Cpu Usage] " + cpuUsage + " [Cpu Temp] " + temperatura + " [Mem Usage] " + memUsage;
-  publishLog(dados);
-
-  // Verificar conexão com o MQTT Broker
-  if (!client.connected()) {
-    reconnect();
+  if(frequenciaAlarme == 0){
+    noTone(BUZZER);
+  } else {
+    tone(BUZZER, frequenciaAlarme);
   }
-  client.loop();
 
-  // Publicar dados no MQTT
-  publishCpuTemp(temperatura);
-  publishCpuUsage(cpuUsage);
-  publishMemUsage(memUsage);
-
-  delay(120000);  // Atraso de 2 minutos
 }
+
