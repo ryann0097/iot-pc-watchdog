@@ -9,9 +9,9 @@
  * =====================================================
  */
 
-#define BUZZER
-#define HCSR04_TRIG
-#define HCSR04_ECHO
+#define BUZZER 5
+#define HCSR04_TRIG 18
+#define HCSR04_ECHO 19
 #define VELOC_SOM 0.034
 #define INTERVALO 120000
 
@@ -22,7 +22,7 @@ float verificarDistanciaUsuario(){
   delayMicroseconds(10);
   digitalWrite(HCSR04_TRIG, LOW);
 
-  long = duracaoPulso = pulseIn(HCSR04_ECHO, HIGH);
+  long duracaoPulso = pulseIn(HCSR04_ECHO, HIGH);
   float distanciaCm = duracaoPulso * VELOC_SOM / 2;
 
   return distanciaCm;
@@ -34,7 +34,7 @@ float verificarDistanciaUsuario(){
  */
 
 #define CICLOS 3
-int historicoCpu[CICLOS] = {0};
+int historicoCPU[CICLOS] = {0};
 int historicoMemoria[CICLOS] = {0};
 int historicoTemperatura[CICLOS] = {0};
 
@@ -81,8 +81,8 @@ bool mediaElevada(int* historico, int limite) {
  */
 #define IO_USERNAME  "ryansilv68"
 #define IO_KEY       "aio_dQZI64bfLMOtQDrgdoJfHa7kHEpb"
-const char* ssid = "Wokwi-GUEST";
-const char* password = "";
+const char* ssid = "ryann0097";
+const char* password = "rdss0973";
 
 /** ==================[ MQTT Protocol ]===================
  * Configurações do MQTT
@@ -202,7 +202,7 @@ void publishMemUsage(float value) {
 void publishLog(String dados) {
     char log_cstr[60];
     String log = dados;
-    strcpy(log_cstr, log);
+    strcpy(log_cstr, log.c_str());
     client.publish("ryansilv68/feeds/pc-watchdog-project-pilot.logs", log_cstr);
 }
 
@@ -280,11 +280,11 @@ void loop() {
 
     // Receber dados do script do PC.
     String dadosScript = obterDados();
-    if (!dadosScript.empty()) {
+    if (!dadosScript.isEmpty()) {
       processarDados(dadosScript);
     }
 
-    String dados = "[Cpu Usage] " + cpuUsage + " [Cpu Temp] " + temperatura + " [Mem Usage] " + memUsage;
+    String dados = "[Cpu Usage] " + String(cpuUsage) + " [Cpu Temp] " + String(temperatura) + " [Mem Usage] " + String(memUsage);
 
     // Verificar conexão com o MQTT Broker
     if (!client.connected()) {
@@ -293,17 +293,17 @@ void loop() {
     client.loop();
 
     // Se tiver internet, publicar dados no MQTT.
-    if(io.connect){
+    
       publishCpuTemp(temperatura);
       publishCpuUsage(cpuUsage);
       publishMemUsage(memUsage);
       publishLog(dados);
-    }else{
-      SalvarNoSPIFFS(dados);
-    }
+   
+      salvarNoSPIFFS(dados);
+ 
 
     // Aqui é o sistema de monitoramento local:
-    atualizarHistorico(historicoCpu, cpuUsage);
+    atualizarHistorico(historicoCPU, cpuUsage);
     atualizarHistorico(historicoTemperatura, temperatura);
     atualizarHistorico(historicoMemoria, memUsage);
 
