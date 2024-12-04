@@ -246,6 +246,31 @@ void processarDados(String dados) {
     memUsage = uso_memoria.toFloat();
 }
 
+/** ==================[ Perturbar ]==========
+ * Funções para alertar temperaturas criticas
+ * ============================================
+ */
+void perturbaPerto(float temperaturaAtual) {
+    if (temperaturaAtual > temperaturaCritica) {
+        digitalWrite(LED_PIN, HIGH); 
+        tone(BUZZER_PIN, 2000);       
+    } else {
+        digitalWrite(LED_PIN, LOW);   
+        noTone(BUZZER_PIN);           
+    }
+}
+
+void perturbaLonge(float temperaturaAtual){
+  if(temperaturaAtual > temperaturaCritica){
+     if (temperaturaAtual > 65.0) {
+        String mensagem = "ALERTA: Temperatura crítica detectada! (" + String(temperaturaAtual) + " °C)";
+        char mensagemCstr[100];
+        mensagem.toCharArray(mensagemCstr, 100); 
+        client.publish("ryansilv68/feeds/pc-watchdog-project-pilot.alertas", mensagemCstr);
+        Serial.println("Alerta enviado ao Adafruit IO: " + mensagem); 
+  }
+}
+
 /** ==================[ Setup e Loop Principal ]==========
  * Funções para configurar e executar o ciclo principal
  * ============================================
