@@ -1,0 +1,56 @@
+import psycopg2
+
+def databaseInitiallize():
+    try:
+        conn = psycopg2.connect(
+            dbname="railway",
+            user="postgres",
+            password="drDERankeuBdCgRoCjZUOlWsQvrgzUjO",
+            host="junction.proxy.rlwy.net",
+            port="48411")
+        return conn        
+    except Exception as e:
+        print(f"Erro ao conncetar ao banco de dados: {e}")
+
+
+def updateData(pc, temperatura, cpu, memoria):
+    try:
+        conn = databaseInitiallize()
+        cursor = conn.cursor()
+        query = f'INSERT INTO "{pc}" (temperatura, cpu, memoria) VALUES (%s, %s, %s);'
+        cursor.execute(query, (temperatura, cpu, memoria))
+
+        conn.commit()
+    except Exception as e:
+        print(f"Erro ao salvar dados no banco: {e}")
+    finally:
+        # Fechar a conexão
+        if conn:
+            cursor.close()
+            conn.close()
+
+
+
+def searchUser(id_cod):
+    try:
+        conn = databaseInitiallize()
+        cursor = conn.cursor()
+        # Query para buscar o usuário
+        query = "SELECT nome FROM users WHERE id_cod = %s;"
+        cursor.execute(query, (id_cod,))
+        resultado = cursor.fetchone()
+        if resultado:
+            return resultado[0]
+        else:
+            return None
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(f"Erro ao buscar o usuário: {error}")
+        return None
+    finally:
+        # Fechar a conexão
+        if conn:
+            cursor.close()
+            conn.close()
+
+
+
