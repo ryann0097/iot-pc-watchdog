@@ -59,15 +59,59 @@ def searchUser(user_id):
             conn.close()
 
 
-def createUser(nome, cod_id, url):
+def createUser(nome, cod_id):
     try:
         conn = databaseInitiallize()
         cursor = conn.cursor()
-        # Query para buscar o usuário
-        query = "INSERT INTO users(nome, cod_id, url) VALUES (%s, %s, %s);"
-        cursor.execute(query, (nome, cod_id, url))
+        
+        # Inserir o usuário na tabela
+        query_insert = "INSERT INTO users(nome, id_cod) VALUES (%s, %s);"
+        cursor.execute(query_insert, (nome, cod_id))
+        conn.commit()
+
+        # Obter o ID do usuário recém-criado
+        query_select = "SELECT id FROM users WHERE id_cod = %s;"
+        cursor.execute(query_select, (cod_id,))  # O parâmetro deve ser uma tupla
+        resultado = cursor.fetchone()
+
+        if resultado:
+            addUrls(resultado[0])  # Passa o ID para a função addUrls
+        else:
+            print("Usuário criado, mas o ID não foi encontrado.")
     except (Exception, psycopg2.DatabaseError) as error:
         print(f"Erro ao inserir os dados: {error}")
+    finally:
+        # Fechar a conexão
+        if conn:
+            cursor.close()
+            conn.close()
+
+
+def addUrls(id):
+    try:
+        conn = databaseInitiallize()
+        cursor = conn.cursor()
+
+        # Gerar os URLs
+        cpu_url = "https://io.adafruit.com/api/v2/ryansilv68/feeds/pc-watchdog-project-pilot.cpu-" + str(id)
+        mem_url = "https://io.adafruit.com/api/v2/ryansilv68/feeds/pc-watchdog-project-pilot.mem-" + str(id)
+        cTemp_url = "https://io.adafruit.com/api/v2/ryansilv68/feeds/pc-watchdog-project-pilot.c-temp-" + str(id)
+
+        # Query para atualizar as URLs
+        query = """
+            UPDATE users 
+            SET cpu_url = %s, mem_url = %s, cTemp_url = %s
+            WHERE id = %s;
+        """
+        cursor.execute(query, (cpu_url, mem_url, cTemp_url, id))
+
+        # Confirma a transação
+        conn.commit()
+        print(f"URLs atualizadas com sucesso para o usuário {id}.")
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(f"Erro ao atualizar URLs: {error}")
+        return None
     finally:
         # Fechar a conexão
         if conn:
