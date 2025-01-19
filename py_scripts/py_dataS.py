@@ -31,27 +31,30 @@ def updateData(pc, temperatura, cpu, memoria):
             conn.close()
 
 
-def searchUser(user_id):
+import psycopg2
+
+def searchUser(id_cod):
     try:
         conn = databaseInitiallize()
         cursor = conn.cursor()
 
-        # Query para buscar o usuário pelo ID
-        query = "SELECT id_cod, nome, url FROM users WHERE id_cod = %s;"
-        cursor.execute(query, (user_id,))
-
-        # Obter o resultado
+        # Query para buscar o usuário
+        query = "SELECT id_cod, nome, cpu_url, mem_url, cTemp_url FROM users WHERE id_cod = %s;"
+        cursor.execute(query, (id_cod,))
         resultado = cursor.fetchone()
-       
+
         if resultado:
-            print(user_id)
-            # Criar e retornar um objeto da classe User
-            return User(user_id=resultado[0], name=resultado[1], url=resultado[2])
+            # Criando um objeto User com os dados retornados
+            user = User(user_id=resultado[0], nome=resultado[1], cpu_url=resultado[2], mem_url=resultado[3], cTemp_url=resultado[4])
+            return user
         else:
+            print("Usuário não encontrado.")
             return None
+
     except (Exception, psycopg2.DatabaseError) as error:
         print(f"Erro ao buscar o usuário: {error}")
         return None
+
     finally:
         # Fechar a conexão
         if conn:

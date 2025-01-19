@@ -2,25 +2,17 @@ class User:
     """
     Classe que representa um usuário com ID, código e nome.
     """
-
-    def __init__(self, user_id: int, name: str, url: str):
+    def __init__(self, user_id, nome, cpu_url=None, mem_url=None, cTemp_url=None):
         self.user_id = user_id
-        self.name = name
-        self.url = url
+        self.nome = nome
+        self.cpu_url = cpu_url
+        self.mem_url = mem_url
+        self.cTemp_url = cTemp_url
 
     def __str__(self):
-        return f"User(id={self.user_id}, name='{self.name}', url='{self.url}')"
+        return f"ID: {self.user_id}, Nome: {self.nome}, CPU URL: {self.cpu_url}, Mem URL: {self.mem_url}, cTemp URL: {self.cTemp_url}"
 
-    def to_dict(self):
-        """
-        Converte o objeto User em um dicionário.
-        :return: Dicionário com os dados do usuário.
-        """
-        return {
-            "id": self.user_id,
-            "url": self.url,
-            "name": self.name
-        }
+
 
     def update_name(self, new_name: str):
         """
