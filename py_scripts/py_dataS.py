@@ -1,4 +1,5 @@
 import psycopg2
+from user import User
 
 def databaseInitiallize():
     try:
@@ -30,17 +31,22 @@ def updateData(pc, temperatura, cpu, memoria):
             conn.close()
 
 
-
-def searchUser(id_cod):
+def searchUser(user_id):
     try:
         conn = databaseInitiallize()
         cursor = conn.cursor()
-        # Query para buscar o usuário
-        query = "SELECT nome FROM users WHERE id_cod = %s;"
-        cursor.execute(query, (id_cod,))
+
+        # Query para buscar o usuário pelo ID
+        query = "SELECT id_cod, nome, url FROM users WHERE id_cod = %s;"
+        cursor.execute(query, (user_id,))
+
+        # Obter o resultado
         resultado = cursor.fetchone()
+       
         if resultado:
-            return resultado[0]
+            print(user_id)
+            # Criar e retornar um objeto da classe User
+            return User(user_id=resultado[0], name=resultado[1], url=resultado[2])
         else:
             return None
     except (Exception, psycopg2.DatabaseError) as error:
@@ -51,6 +57,7 @@ def searchUser(id_cod):
         if conn:
             cursor.close()
             conn.close()
+
 
 def createUser(nome, cod_id, url):
     try:
@@ -66,7 +73,3 @@ def createUser(nome, cod_id, url):
         if conn:
             cursor.close()
             conn.close()
-
-
-
-
