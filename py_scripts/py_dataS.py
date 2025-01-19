@@ -1,4 +1,5 @@
 import psycopg2
+from py_scripts.user import User
 from user import User
 
 class Database:
@@ -83,6 +84,8 @@ class Database:
 
             if resultado:
                 self.add_urls(resultado[0])  # Passa o ID para a função addUrls
+                return True
+
             else:
                 print("Usuário criado, mas o ID não foi encontrado.")
         except (Exception, psycopg2.DatabaseError) as error:
