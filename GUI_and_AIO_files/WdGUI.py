@@ -2,6 +2,8 @@ import serial
 import tkinter as tk
 from tkinter import messagebox
 
+from py_scripts.py_dataS import Database
+
 class WatchdogClient:
     """
     Classe principal para a interface do painel Watchdog Client.
@@ -40,6 +42,7 @@ class WatchdogClient:
         self.root = tk.Tk()
         self.root.title("Watchdog Client Panel")
         self.root.geometry("400x300")
+        self.db = Database(dbname="railway", user="postgres", password="drDERankeuBdCgRoCjZUOlWsQvrgzUjO", host="junction.proxy.rlwy.net", port="48411")
 
         self.display_var = tk.StringVar()
         self.id_var = tk.StringVar()
@@ -84,8 +87,14 @@ class WatchdogClient:
         def enviar_dados_login():
             input_value = self.display_var.get()
             if input_value:
-                messagebox.showinfo("Login", f"ID inserido: {input_value}")
-                self.display_var.set("")
+                try:
+                    user = self.db.search_user(input_value)
+                    messagebox.showinfo("Login", f"User: {user.nome} conectado")
+                except Exception as e:
+                    print(f"Erro ao encontrar o user: {input_value} - Erro: {e}")
+                    messagebox.showinfo("Erro", f"ID: {input_value} não encontrado")
+                finally:
+                    self.display_var.set("")
             else:
                 messagebox.showwarning("Aviso", "Por favor, insira seu ID.")
 
@@ -100,15 +109,26 @@ class WatchdogClient:
     def janela_criar_usuario(self):
         """Configura a interface para criar um novo usuário."""
         def salvar_usuario():
-            user_id = self.id_var.get()
+            user_id= self.id_var.get()
             nome = self.nome_var.get()
-            url = self.url_var.get()
-            if user_id and nome and url:
-                messagebox.showinfo("Usuário Criado", f"ID: {user_id}\nNome: {nome}\nURL: {url}")
-                self.id_var.set("")
-                self.nome_var.set("")
-                self.url_var.set("")
-            else:
+            # Verificando se o ID tem exatamente 6 caracteres
+            if len(user_id) != 6:
+                messagebox.showinfo("Aviso", "O ID do usuário deve conter exatamente 6 caracteres.")
+                
+            if len(user_id) == 6 and nome:
+                try:
+                    if self.db.create_user(nome, user_id):
+                        
+                        self.id_var.set("")
+                        self.nome_var.set("")
+                        messagebox.showinfo("Aviso", f"Usuario {nome} craido com sucesso!")
+                        tela_criar.destroy()
+                        self.root.deiconify()
+
+                except Exception as e:
+                    print(f"Erro ao cadastrar o user: {nome} - Erro: {e}")
+                    messagebox.showinfo("Erro", f"Erro ao cadastrar o user: {nome}")
+            elif not nome or not user_id:
                 messagebox.showwarning("Aviso", "Por favor, preencha todos os campos.")
 
         tela_criar = tk.Toplevel(self.root)
