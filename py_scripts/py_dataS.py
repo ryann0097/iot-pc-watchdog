@@ -52,5 +52,21 @@ def searchUser(id_cod):
             cursor.close()
             conn.close()
 
+def createUser(nome, cod_id, url):
+    try:
+        conn = databaseInitiallize()
+        cursor = conn.cursor()
+        # Query para buscar o usuário
+        query = "INSERT INTO users(nome, cod_id, url) VALUES (%s, %s, %s);"
+        cursor.execute(query, (nome, cod_id, url))
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(f"Erro ao inserir os dados: {error}")
+    finally:
+        # Fechar a conexão
+        if conn:
+            cursor.close()
+            conn.close()
+
+
 
 
